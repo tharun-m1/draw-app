@@ -20,6 +20,9 @@ importers:
 
   apps/fe:
     dependencies:
+      '@types/axios':
+        specifier: ^0.14.4
+        version: 0.14.4
       axios:
         specifier: ^1.7.9
         version: 1.7.9
@@ -635,6 +638,10 @@ packages:
   '@turbo/workspaces@1.13.4':
     resolution: {integrity: sha512-3uYg2b5TWCiupetbDFMbBFMHl33xQTvp5DNg0fZSYal73Z9AlFH9yWabHWMYw6ywmwM1evkYRpTVA2n7GgqT5A==}
     hasBin: true
+
+  '@types/axios@0.14.4':
+    resolution: {integrity: sha512-9JgOaunvQdsQ/qW2OPmE5+hCeUB52lQSolecrFrthct55QekhmXEwT203s20RL+UHtCQc15y3VXpby9E7Kkh/g==}
+    deprecated: This is a stub types definition. axios provides its own type definitions, so you do not need this installed.
 
   '@types/bcrypt@5.0.2':
     resolution: {integrity: sha512-6atioO8Y75fNcbmj0G7UjI9lXN2pQ/IGJ2FWT4a/btd0Lk9lQalHLKhkgKVZ3r+spnmWUKfbMi1GEe9wyHQfNQ==}
@@ -3288,6 +3295,12 @@ snapshots:
       rimraf: 3.0.2
       semver: 7.6.3
       update-check: 1.5.4
+
+  '@types/axios@0.14.4':
+    dependencies:
+      axios: 1.7.9
+    transitivePeerDependencies:
+      - debug
 
   '@types/bcrypt@5.0.2':
     dependencies:

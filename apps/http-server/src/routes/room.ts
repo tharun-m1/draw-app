@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import { isLoggedIn } from "../middlewares/isLoggedIn";
 import prisma from "@repo/db/client"
 import { CreateRoomBody } from "@repo/common/types";
+import crypto from "crypto"
 
 export const roomRouter: Router = Router();
 
@@ -17,11 +18,13 @@ roomRouter.post("/create", async (req: Request, res: Response, next: NextFunctio
             })
             return;
         }
+        const passKey = crypto.randomBytes(32).toString("hex");
         try {
             const room = await prisma.room.create({
                 data: {
                     slug: parsedData?.data?.room,
                     adminId: adminId,
+                    passKey
                 }
             })
             res.status(200).json({

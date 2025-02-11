@@ -65,21 +65,25 @@ wss.on('connection', function connection(ws, request) {
                 } else {
                     parsedData = JSON.parse(data);
                 }
-                console.log(parsedData)
-                console.log("type of data", typeof parsedData)
                 if (parsedData.type === "join_room") {
                     const roomId = parsedData.roomId;
-                    console.log("roomID; ", roomId)
+                    const passKey =  parsedData.passKey;
                     const room = await prisma.room.findFirst({
                         where: {
                             id: roomId
                         },
                         select: {
-                            id: true
+                            id: true,
+                            passKey: true,
                         }
                     })
                     if (!room) {
                         console.log("no rooom")
+                        ws.close();
+                        return;
+                    }
+                    if(room.passKey !== passKey){
+                        console.log("Invalid password")
                         ws.close();
                         return;
                     }
@@ -105,6 +109,7 @@ wss.on('connection', function connection(ws, request) {
                         }))
                     })
                 } else if (parsedData.type === "leave_room") {
+                    console.log(`${user_id} left room`)
                     const roomId = parsedData.roomId;
                     const new_state = rooms[roomId]?.filter((room) => room.user_id !== user_id) || []
                     rooms[roomId] = new_state

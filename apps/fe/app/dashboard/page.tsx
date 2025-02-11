@@ -6,8 +6,9 @@ import JoinRoomModal from "@/components/JoinRoomModal";
 import CreateRoomModal from "@/components/CreateRoomModal";
 import Header from "@/components/Header";
 import toast from "react-hot-toast";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { BACKEND_URL } from "@/config";
+import { useRouter } from "next/navigation";
 
 interface Room {
   id: string;
@@ -26,18 +27,22 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
   const [rooms, setRooms] = useState([]);
-
-
-
+  const [passKey, setPassKey] = useState("");
+  const router = useRouter();
   // Handlers
   const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    for( let c = 0; c <roomCode.length; c++){
+      if(roomCode.charAt(c) === " "){
+        toast.error("Room Code Cannot have Spaces!")
+        setIsLoading(false)
+        return;
+      }
+    }
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-      console.log("Joining room with code:", roomCode);
-      setShowJoinModal(false);
-      setRoomCode("");
+     localStorage.setItem("passKey", passKey)
+     router.push(`/canvas/${roomCode}`)
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +54,7 @@ const Dashboard: React.FC = () => {
     for (let c = 0; c < newRoomName.length; c++) {
       if (newRoomName.charAt(c) == " ") {
         toast.error("Cannot have Spaces", { id: "VALIDATION_FAILED" });
-        setIsLoading(false)
+        setIsLoading(false);
         return;
       }
     }
@@ -68,27 +73,31 @@ const Dashboard: React.FC = () => {
       setShowCreateModal(false);
       setNewRoomName("");
       return res.data.roomId;
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.log(error );
+      if(error.status === 411){
+       toast.error("Room Taken!")
+       return;
+      }
       toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteRoom = async(roomId: string) => {
+  const handleDeleteRoom = async (roomId: string) => {
     try {
-        const res = await axios.delete(`${BACKEND_URL}/room/delete/${roomId}`, {
-          headers:{
-            Authorization:localStorage.getItem("token")
-          }
-        })
-        return res.data.roomId;
+      const res = await axios.delete(`${BACKEND_URL}/room/delete/${roomId}`, {
+        headers: {
+          Authorization: localStorage.getItem("token"),
+        },
+      });
+      return res.data.roomId;
     } catch (error) {
-      console.log(error)
-      toast.error("Failed to Delete.", {id:"DELETE_FAILED"})
+      console.log(error);
+      toast.error("Failed to Delete.", { id: "DELETE_FAILED" });
     }
-  }
+  };
 
   useEffect(() => {
     const get_rooms = async () => {
@@ -100,7 +109,7 @@ const Dashboard: React.FC = () => {
         });
         setRooms(res.data.rooms);
       } catch (error) {
-        toast.error("Unable to load rooms.", {id:"GET_FAILED"});
+        toast.error("Unable to load rooms.", { id: "GET_FAILED" });
       }
     };
 
@@ -149,9 +158,7 @@ const Dashboard: React.FC = () => {
         {/* Rooms Grid */}
         <div>
           <h2 className="text-xl font-semibold text-gray-100 mb-4">
-            Your Rooms{" "}
-            {rooms.length > 0 &&
-              `(${rooms.length})`}
+            Your Rooms {rooms.length > 0 && `(${rooms.length})`}
           </h2>
           {rooms.length === 0 ? (
             <div className="text-center py-12 bg-gray-800 rounded-lg">
@@ -159,7 +166,13 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {rooms?.map((room) => <RoomTab deleteRoom={handleDeleteRoom} key={room.id} room={room} />)}
+              {rooms?.map((room: any) => (
+                <RoomTab
+                  deleteRoom={handleDeleteRoom}
+                  key={room.id}
+                  room={room}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -168,6 +181,8 @@ const Dashboard: React.FC = () => {
       {/* Join Room Modal */}
       {showJoinModal && (
         <JoinRoomModal
+          passKey={passKey}
+          setPassKey={setPassKey}
           setShowJoinModal={setShowJoinModal}
           handleJoinRoom={handleJoinRoom}
           roomCode={roomCode}

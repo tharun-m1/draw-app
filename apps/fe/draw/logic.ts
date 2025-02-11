@@ -1,7 +1,8 @@
 import { BACKEND_URL } from "@/config";
 import axios from "axios";
+import { ChangeEvent } from "react";
 
-type SelectedTool = "rect" | "circle" | "line" | "pointer"
+type SelectedTool = "rect" | "circle" | "line" | "pointer" | "pen"
 type Shape = {
     type: "rect";
     startX: number;
@@ -23,6 +24,14 @@ type Shape = {
     startY: number;
     endX: number;
     endY: number;
+} | {
+    type:"pen";
+    points:Point[]
+}
+
+interface Point {
+    x: number;
+    y: number;
 }
 
 
@@ -38,7 +47,8 @@ export class Game {
     private heigth: number = 0;
     private selectedTool: string = "pointer";
     private existingShapes: Shape[] = [];
-    private roomId: string | null = null
+    private roomId: string | null = null;
+    private points: Point[] = []
 
     constructor(canvas: HTMLCanvasElement, ws: WebSocket | null, roomId: string | null) {
         const ctx = canvas.getContext("2d")
@@ -80,6 +90,19 @@ export class Game {
         this.ctx?.stroke()
     }
 
+    private freeHand(points: any) {
+        if (!this.ctx) return;
+        this.ctx.lineWidth = 2
+        this.ctx?.beginPath()
+        this.ctx?.moveTo(points[0].x, points[0].y)
+        for (let i = 1; i < points.length - 1; i++) {
+            const xc = (points[i].x + points[i + 1].x) / 2;
+            const yc = (points[i].y + points[i + 1].y) / 2;
+            this.ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        this.ctx.stroke();
+    }
+
     async initShapes() {
         try {
             const shapes = await this.getShapes()
@@ -102,6 +125,10 @@ export class Game {
         this.clicked = true;
         this.startX = e.clientX;
         this.startY = e.clientY;
+        if(this.selectedTool === "pen"){
+            this.ctx?.beginPath();
+        }
+
     }
 
     private mouseMoveHandler = (e: MouseEvent) => {
@@ -129,6 +156,11 @@ export class Game {
         }
         if (this.selectedTool === "line") {
             this.drawLine(this.startX, this.startY, e.clientX, e.clientY)
+        }
+
+        if (this.selectedTool === "pen") {
+            this.points.push({ x: e.clientX, y: e.clientY })
+            this.freeHand(this.points)
         }
 
     }
@@ -169,6 +201,14 @@ export class Game {
                 endX: e.clientX,
                 endY: e.clientY
             }
+        }
+        if (this.selectedTool === "pen") {
+            newShape = {
+                type:"pen",
+                points:this.points
+
+            }
+            this.points = []
         }
 
         if (!newShape) return;
@@ -241,6 +281,9 @@ export class Game {
             }
             else if (shape.type === "line") {
                 this.drawLine(shape.startX, shape.startY, shape.endX, shape.endY)
+            }else if (shape.type === "pen") {
+                this.ctx?.beginPath();
+                this.freeHand(shape.points)
             }
 
         })

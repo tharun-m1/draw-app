@@ -1,14 +1,20 @@
+import { Clock, Trash2, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import { Clock, Trash2,  Users } from "lucide-react";
 import React from "react";
+import toast from "react-hot-toast";
 
 interface RoomTabProps {
-  room:any;
+  room: any;
   deleteRoom: (s: string) => void;
 }
 
 function RoomTab({ room, deleteRoom }: RoomTabProps) {
-
+  const router = useRouter()
+  const handleJoin = () => {
+    localStorage.setItem("passKey", room.passKey)
+    router.push(`/canvas/${room.slug}`)
+  }
   return (
     <div
       key={room.id}
@@ -20,15 +26,23 @@ function RoomTab({ room, deleteRoom }: RoomTabProps) {
           <Users className="h-4 w-4 mr-1" />
           <span className="text-sm">{room.participants}</span>
         </div> */}
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(room.passKey);
+            toast.success("Copied!")
+          }}
+          className=" text-white border border-zinc-300 px-2 py-1 text-[0.75rem] rounded-md"
+        >
+          Copy Pass Key
+        </button>
       </div>
-      {/* <div className="flex items-center text-sm text-gray-400">
-        <Clock className="h-4 w-4 mr-1" />
-        <span>Last accessed {room.lastAccessed}</span>
-      </div> */}
+
       <div className="mt-2 flex items-center gap-3">
-        <button className="bg-green-700 px-6 py-1 rounded-lg text-white tracking-wide font-semibold">Join Now</button>
-        <button onClick={() => deleteRoom(room.id)}>
-            <Trash2 className="text-red-700" />
+        <button onClick={handleJoin} className="bg-green-700 px-6 py-1 rounded-lg text-white tracking-wide font-semibold">
+          Join Now
+        </button>
+        <button title="Deletes instantly" onClick={() => deleteRoom(room.id)}>
+          <Trash2 className="text-red-700" />
         </button>
       </div>
     </div>

@@ -4,12 +4,11 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BACKEND_URL, WS_URL } from "@/config";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface ConnectPageProps {
   slugId: string;
 }
-
-
 
 function ConnectPage({ slugId }: ConnectPageProps) {
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -20,7 +19,7 @@ function ConnectPage({ slugId }: ConnectPageProps) {
   const connect = async () => {
     try {
       setLoading(true);
-      const token = window.localStorage.getItem("token")
+      const token = window.localStorage.getItem("token");
       const res = await axios.get(`${BACKEND_URL}/room/${slugId}`, {
         headers: {
           Authorization: token,
@@ -33,11 +32,20 @@ function ConnectPage({ slugId }: ConnectPageProps) {
         const data = JSON.stringify({
           type: "join_room",
           roomId: res.data.roomId,
+          passKey: localStorage.getItem("passKey"),
         });
 
         ws.send(data);
       };
-      
+      ws.onclose = () => {
+        const key = localStorage.getItem("passKey");
+        if (!key) {
+          toast.error("No Pass Key Provided!", { id: "NO_PASSKEY" });
+        } else {
+          toast.error("Server Disconnected!", { id: "DISCONNECTED" });
+        }
+        router.replace("/dashboard");
+      };
     } catch (error) {
       console.log(error);
       router.back();

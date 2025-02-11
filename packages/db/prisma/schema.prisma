@@ -27,6 +27,7 @@ model Room {
   id        String   @id @default(uuid())
   slug      String   @unique
   createdAt DateTime @default(now())
+  passKey   String
   adminId   String
   admin     User     @relation(fields: [adminId], references: [id])
   chats     Chat[]
