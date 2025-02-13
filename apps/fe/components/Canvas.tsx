@@ -1,13 +1,13 @@
 "use client";
 
-type tool = "rect" | "pointer" | "circle" | "line" | "pen";
+type tool = "rect" | "pointer" | "circle" | "line" | "pen" | "text";
 
 import Tool from "@/components/Tool";
 
 // import { initDraw } from "@/draw";
 import { Game } from "@/draw/logic";
 import useScreenSize from "@/hooks/useScreenSize";
-import { Circle, Minus, MousePointer, Pen, Square } from "lucide-react";
+import { Baseline, Circle, Minus, MousePointer, Pen, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -65,7 +65,7 @@ function Canvas({ roomId, ws }: CanvasProps) {
     game?.setSelectedTool(selectedTool);
   }, [selectedTool, game]);
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
       <canvas ref={canvasRef} width={width} height={height}></canvas>
       {/* <div className="fixed top-4 w-full flex justify-center  text-white"> */}
         <div ref={toolbarRef} style={{
@@ -75,7 +75,7 @@ function Canvas({ roomId, ws }: CanvasProps) {
             changeTool={() => handleToolSelect("circle")}
             isSelected={selectedTool === "circle"}
           >
-            <Circle />
+            <Circle  />
           </Tool>
           <Tool
             changeTool={() => handleToolSelect("rect")}
@@ -101,7 +101,13 @@ function Canvas({ roomId, ws }: CanvasProps) {
           >
             <Pen />
           </Tool>
-          <button onClick={handleExitRoom} className="bg-red-600 text-white px-2 py-1 rounded-md">exit</button>
+          <Tool
+            changeTool={() => handleToolSelect("text")}
+            isSelected={selectedTool === "text"}
+          >
+           <Baseline />
+          </Tool>
+          <button onClick={handleExitRoom} className="bg-red-600 text-white px-2 py-1 rounded-md">Exit</button>
         {/* </div> */}
       </div>
     </div>

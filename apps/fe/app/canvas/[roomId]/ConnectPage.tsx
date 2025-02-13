@@ -59,7 +59,7 @@ function ConnectPage({ slugId }: ConnectPageProps) {
 
   useEffect(() => {}, []);
   if (loading) {
-    return <div>Connecting...</div>;
+    return <div className="h-[100vh] w-full flex justify-center items-center text-white bg-black text-xl">Connecting...</div>;
   }
 
   return <Canvas roomId={roomId} ws={socket} />;
