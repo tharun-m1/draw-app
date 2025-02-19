@@ -1,13 +1,13 @@
 "use client";
 
-type tool = "rect" | "pointer" | "circle" | "line" | "pen" | "text";
+type tool = "rect" | "pointer" | "circle" | "line" | "pen" | "text" | "erase";
 
 import Tool from "@/components/Tool";
 
 // import { initDraw } from "@/draw";
 import { Game } from "@/draw/logic";
 import useScreenSize from "@/hooks/useScreenSize";
-import { Baseline, Circle, Minus, MousePointer, Pen, Square } from "lucide-react";
+import { Baseline, Circle, Eraser, Minus, MousePointer, Pen, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -106,6 +106,9 @@ function Canvas({ roomId, ws }: CanvasProps) {
             isSelected={selectedTool === "text"}
           >
            <Baseline />
+          </Tool>
+          <Tool isSelected={selectedTool === "erase"} changeTool={() => handleToolSelect("erase")}>
+            <Eraser />
           </Tool>
           <button onClick={handleExitRoom} className="bg-red-600 text-white px-2 py-1 rounded-md">Exit</button>
         {/* </div> */}

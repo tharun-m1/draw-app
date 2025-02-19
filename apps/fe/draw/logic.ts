@@ -1,9 +1,18 @@
 import { BACKEND_URL } from "@/config";
 import axios from "axios";
+import { Key } from "react";
 
-type SelectedTool = "rect" | "circle" | "line" | "pointer" | "pen" | "text";
+type SelectedTool =
+  | "rect"
+  | "circle"
+  | "line"
+  | "pointer"
+  | "pen"
+  | "text"
+  | "erase";
 type Shape =
   | {
+      shapeId: string;
       type: "rect";
       startX: number;
       startY: number;
@@ -12,6 +21,7 @@ type Shape =
     }
   | null
   | {
+      shapeId: string;
       type: "circle";
       centerX: number;
       centerY: number;
@@ -22,6 +32,7 @@ type Shape =
       endAngle: number;
     }
   | {
+      shapeId: string;
       type: "line";
       startX: number;
       startY: number;
@@ -29,10 +40,12 @@ type Shape =
       endY: number;
     }
   | {
+      shapeId: string;
       type: "pen";
       points: Point[];
     }
   | {
+      shapeId: string;
       type: "text";
       content: string;
       startX: number;
@@ -43,6 +56,7 @@ interface Point {
   x: number;
   y: number;
 }
+type ShapeWithoutId = Omit<Shape, "id"> | null;
 
 export class Game {
   private canvas;
@@ -74,6 +88,11 @@ export class Game {
   }
   setSelectedTool(selectedTool: SelectedTool) {
     this.selectedTool = selectedTool;
+    if (selectedTool === "pointer") {
+      this.canvas.style.cursor = "move";
+    } else {
+      this.canvas.style.cursor = "auto";
+    }
   }
 
   private init() {
@@ -189,6 +208,7 @@ export class Game {
 
     if (!this.inputbox) return;
     const styles = getComputedStyle(this.inputbox);
+
     this.drawText(
       this.content,
       parseFloat(styles.left),
@@ -201,12 +221,19 @@ export class Game {
       startX: parseFloat(styles.left),
       startY: parseFloat(styles.top),
     };
-    this.existingShapes.push(newShape);
-    this.ws?.send(JSON.stringify({
-      type:"chat",
-      message:JSON.stringify({...newShape}),
-      roomId: this.roomId
-    }))
+    if (this.content.trim().length !== 0) {
+      const shapeId = crypto.randomUUID();
+      this.existingShapes.push(newShape);
+      this.ws?.send(
+        JSON.stringify({
+          type: "chat",
+          message: JSON.stringify({ ...newShape }),
+          roomId: this.roomId,
+          shapeId,
+        })
+      );
+    }
+
     if (inputbox) {
       document.body.removeChild(inputbox);
     }
@@ -244,8 +271,186 @@ export class Game {
     this.canvas.removeEventListener("mouseup", this.mouseUpHandler);
   }
 
+  private eraseShape(shapeId: string) {
+    // console.log("shapeId: ", shape)
+    this.existingShapes = this.existingShapes.filter(
+      (shape: Shape) => shape?.shapeId !== shapeId
+    );
+    // console.log(this.existingShapes)
+    this.ws?.send(
+      JSON.stringify({
+        type: "erase",
+        roomId: this.roomId,
+        shapeId: shapeId,
+      })
+    );
+    this.clearCanvas();
+  }
+
+  private eraseRect(
+    x: number,
+    y: number,
+    shape: Extract<Shape, { type: "rect" }>
+  ) {
+    // Horizontal lines
+    if (x >= shape.startX && x <= shape.startX + shape.width) {
+      if (
+        (y >= shape.startY - 3 && y <= shape.startY + 3) ||
+        (y >= shape.startY + shape.height - 3 &&
+          y <= shape.startY + shape.height + 3)
+      ) {
+        this.eraseShape(shape.shapeId);
+        // console.log("a rectangle");
+        return true;
+      }
+    }
+    // Vertical lines
+    if (y >= shape.startY && y <= shape.startY + shape.height) {
+      if (
+        (x >= shape.startX - 3 && x <= shape.startX + 3) ||
+        (x >= shape.startX + shape.width - 3 &&
+          x <= shape.startX + shape.width + 3)
+      ) {
+        this.eraseShape(shape.shapeId);
+        // console.log("a rectangle");
+        return true;
+      }
+    }
+    return false
+  }
+
+  private eraseLine(
+    x: number,
+    y: number,
+    shape: Extract<Shape, { type: "line" }>
+  ) {
+    const x1 = shape.startX;
+    const y1 = shape.startY;
+    const x2 = shape.endX;
+    const y2 = shape.endY;
+    const A = y2 - y1;
+    const B = x1 - x2;
+    const C = x2 * y1 - x1 * y2;
+    const numerator = Math.abs(A * x + B * y + C);
+    const denominator = Math.sqrt(A * A + B * B);
+    const d = numerator / denominator;
+    if (d <= 3) {
+      this.eraseShape(shape.shapeId);
+      return true;
+    }
+    return false;
+  }
+
+  private eraseCircle(
+    x: number,
+    y: number,
+    shape: Extract<Shape, { type: "circle" }>
+  ) {
+    const cx = shape.centerX;
+    const cy = shape.centerY;
+    const rx = shape.radiusX;
+    const ry = shape.radiusY;
+    const dx = x - cx;
+    const dy = y - cy;
+    const eq =
+      Math.abs((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) - 1) *
+      Math.min(rx, ry);
+    if (eq <= 5) {
+      this.eraseShape(shape.shapeId);
+      return true;
+    }
+    return false
+  }
+
+  private eraseFreeHandDrawing(
+    x: number,
+    y: number,
+    shape: Extract<Shape, { type: "pen" }>
+  ) {
+    shape.points.forEach((point) => {
+      const cx = point.x;
+      const cy = point.y;
+      const radius = 2;
+      const dx = x - cx;
+      const dy = y - cy;
+      const res = dx * dx + dy * dy - radius * radius;
+      if (res <= 0) {
+        this.eraseShape(shape.shapeId);
+        return true;
+      }
+    });
+    return false
+  }
+
+  private eraseText(
+    x: number,
+    y: number,
+    shape: Extract<Shape, { type: "text" }>
+  ) {
+    if (!this.ctx) return;
+
+    const words = shape?.content.split(" ");
+    let x_offset = shape.startX;
+    let y_offset = shape.startY;
+    let line = "";
+    const fontSize = 16;
+    const lineHeight = fontSize * 1.5; // Assuming 1.5 is the line height multiplier
+    let no_of_lines = 1;
+
+    for (let i = 0; i < words.length; i++) {
+      line = line + words[i] + " ";
+      let metrics = this.ctx.measureText(line);
+      if (metrics.width >= 300 && i > 0) {
+        y_offset += lineHeight;
+        no_of_lines += 1;
+        line = "";
+      }
+    }
+    const total_height = no_of_lines * lineHeight;
+    // console.log("total_height:", total_height);
+    // this.ctx.strokeRect(shape.startX, shape.startY - 10, 300, total_height);
+    if (
+      x >= shape.startX &&
+      x <= shape.startX + 300 &&
+      y >= shape.startY - 10 &&
+      y <= shape.startY + total_height
+    ) {
+      this.eraseShape(shape.shapeId)
+      return true;
+    }
+    return false;
+  }
+
   private mouseDownHandler = (e: MouseEvent) => {
-    if (this.selectedTool === "pointer") return;
+    if (this.selectedTool === "pointer") {
+      return;
+    }
+    if (this.selectedTool === "erase") {
+      const x = e.clientX;
+      const y = e.clientY;
+      let current_index = 0;
+      for (let shape of this.existingShapes) {
+        
+        if (shape?.type === "rect") {
+          const erased = this.eraseRect(x, y, shape);
+          if(erased) return;
+        } else if (shape?.type === "line") {
+          const erased = this.eraseLine(x, y, shape);
+          if(erased) return;
+        } else if (shape?.type === "circle") {
+          const erased = this.eraseCircle(x, y, shape);
+          if(erased) return;
+        } else if (shape?.type === "pen") {
+          const erased = this.eraseFreeHandDrawing(x, y, shape);
+          if(erased) return;
+        } else if (shape?.type === "text") {
+          const erased = this.eraseText(x, y, shape);
+          if(erased) return;
+        }
+        current_index++;
+      }
+      return;
+    }
     this.clicked = true;
     this.startX = e.clientX;
     this.startY = e.clientY;
@@ -267,7 +472,7 @@ export class Game {
     this.heigth = e.clientY - this.startY;
     this.clearCanvas();
     this.ctx.strokeStyle = "rgba(255, 255, 255)";
-
+    this.ctx.lineWidth = 3;
     if (this.selectedTool === "rect") {
       this.drawStrokeRect(this.startX, this.startY, this.width, this.heigth);
     }
@@ -304,7 +509,7 @@ export class Game {
     this.clicked = false;
     this.width = e.clientX - this.startX;
     this.heigth = e.clientY - this.startY;
-    let newShape: Shape = null;
+    let newShape: ShapeWithoutId = null;
     if (this.selectedTool === "rect") {
       newShape = {
         type: "rect",
@@ -344,8 +549,8 @@ export class Game {
     }
 
     if (!newShape) return;
-
-    this.existingShapes.push(newShape);
+    const shapeId = crypto.randomUUID();
+    this.existingShapes.push({ ...newShape, shapeId: shapeId } as Shape);
     if (!this.ws) {
       alert("Disconnected.");
       return;
@@ -353,6 +558,7 @@ export class Game {
     this.ws.send(
       JSON.stringify({
         type: "chat",
+        shapeId: shapeId,
         message: JSON.stringify({ ...newShape }),
         roomId: this.roomId,
       })
@@ -375,6 +581,11 @@ export class Game {
         const shape = JSON.parse(message.message);
         this.existingShapes.push(shape);
         this.clearCanvas();
+      } else if (message.type === "erase") {
+        this.existingShapes = this.existingShapes.filter(
+          (shape) => shape?.shapeId !== message.shapeId
+        );
+        this.clearCanvas();
       }
     };
   }
@@ -388,7 +599,7 @@ export class Game {
     const messages = res.data.messages;
     const shapes = messages.map((msg: any) => {
       const shape = JSON.parse(msg.message);
-      return shape;
+      return { ...shape, shapeId: msg.shapeId };
     });
     return shapes;
   }
@@ -399,6 +610,7 @@ export class Game {
     this.ctx.fillStyle = "rgba(0, 0, 0)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.strokeStyle = "rgba(255, 255, 255)";
+    this.ctx.lineWidth = 3;
     this.existingShapes?.map((shape: any) => {
       if (shape.type === "rect") {
         this.drawStrokeRect(
