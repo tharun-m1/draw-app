@@ -215,7 +215,7 @@ export class Game {
       parseFloat(styles.top),
       parseFloat(styles.width)
     );
-    const newShape: Shape = {
+    const newShape: ShapeWithoutId = {
       type: "text",
       content: this.content,
       startX: parseFloat(styles.left),
@@ -223,7 +223,7 @@ export class Game {
     };
     if (this.content.trim().length !== 0) {
       const shapeId = crypto.randomUUID();
-      this.existingShapes.push(newShape);
+      this.existingShapes.push({ ...newShape, shapeId: shapeId } as Shape);
       this.ws?.send(
         JSON.stringify({
           type: "chat",
