@@ -429,8 +429,7 @@ export class Game {
       const x = e.clientX;
       const y = e.clientY;
       let current_index = 0;
-      for (let shape of this.existingShapes) {
-        
+      for (let shape of this.existingShapes) { 
         if (shape?.type === "rect") {
           const erased = this.eraseRect(x, y, shape);
           if(erased) return;

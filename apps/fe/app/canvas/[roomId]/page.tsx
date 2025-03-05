@@ -1,14 +1,8 @@
 
 import ConnectPage from "./ConnectPage";
 
-
-
-async function CanvasPage({ params }: {
-  params: {
-    roomId: string;
-  }
-}) {
-  const slugId = (await params).roomId;
+async function CanvasPage({ params }: any) {
+  const slugId = params?.roomId;
   return <ConnectPage slugId={slugId} />
 }
 

@@ -1,7 +1,7 @@
-import { Clock, Trash2, Users } from "lucide-react";
+import { Clock, Loader2, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import React from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 
 interface RoomTabProps {
@@ -10,10 +10,14 @@ interface RoomTabProps {
 }
 
 function RoomTab({ room, deleteRoom }: RoomTabProps) {
+  const [loading, setLoading] = useState<Boolean>(false)
   const router = useRouter()
   const handleJoin = () => {
+    setLoading(true)
     localStorage.setItem("passKey", room.passKey)
     router.push(`/canvas/${room.slug}`)
+    setLoading(false)
+    return;
   }
   return (
     <div

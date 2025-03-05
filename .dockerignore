@@ -1,0 +1,31 @@
+# Ignore node_modules across all projects
+**/node_modules
+
+# Ignore common development and system files
+**/.git
+**/.gitignore
+**/*.log
+**/.env
+**/.env.local
+**/.DS_Store
+**/.vscode
+**/.idea
+
+# Ignore build and temporary directories
+**/dist
+**/build
+**/out
+**/*.tmp
+**/*.bak
+
+# Ignore dependency and package manager specific files
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+**/.pnpm-store
+
+# Ignore test and documentation directories
+**/test
+**/tests
+**/docs
+**/coverage
