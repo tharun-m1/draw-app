@@ -7,18 +7,25 @@ import toast from "react-hot-toast";
 interface RoomTabProps {
   room: any;
   deleteRoom: (s: string) => void;
+  deleteRoomIdx: string | null;
+  setDeleteRoomIdx: (x: string | null) => void;
 }
 
-function RoomTab({ room, deleteRoom }: RoomTabProps) {
-  const [loading, setLoading] = useState<Boolean>(false)
-  const router = useRouter()
+function RoomTab({
+  room,
+  deleteRoom,
+  deleteRoomIdx,
+  setDeleteRoomIdx,
+}: RoomTabProps) {
+  const [loading, setLoading] = useState<Boolean>(false);
+  const router = useRouter();
   const handleJoin = () => {
-    setLoading(true)
-    localStorage.setItem("passKey", room.passKey)
-    router.push(`/canvas/${room.slug}`)
-    setLoading(false)
+    setLoading(true);
+    localStorage.setItem("passKey", room.passKey);
+    router.push(`/canvas/${room.slug}`);
+    setLoading(false);
     return;
-  }
+  };
   return (
     <div
       key={room.id}
@@ -33,7 +40,7 @@ function RoomTab({ room, deleteRoom }: RoomTabProps) {
         <button
           onClick={() => {
             navigator.clipboard.writeText(room.passKey);
-            toast.success("Copied!")
+            toast.success("Copied!");
           }}
           className=" text-white border border-zinc-300 px-2 py-1 text-[0.75rem] rounded-md"
         >
@@ -42,11 +49,23 @@ function RoomTab({ room, deleteRoom }: RoomTabProps) {
       </div>
 
       <div className="mt-2 flex items-center gap-3">
-        <button onClick={handleJoin} className="bg-green-700 px-6 py-1 rounded-lg text-white tracking-wide font-semibold">
-          Join Now
+        <button
+          onClick={handleJoin}
+          className="bg-green-700 px-6 py-1 rounded-lg text-white tracking-wide font-semibold"
+        >
+          {loading ? "Loading..." : "Join Now"}
         </button>
-        <button title="Deletes instantly" onClick={() => deleteRoom(room.id)}>
-          <Trash2 className="text-red-700" />
+        <button
+          title="Deletes instantly"
+          onClick={() => {
+            deleteRoom(room.id);
+            setDeleteRoomIdx(room.id)
+          }}
+        >
+          {deleteRoomIdx !== room.id && <Trash2 className="text-red-700" />}
+          {deleteRoomIdx === room.id && (
+            <Loader2 color="red" className="animate-spin h-4 w-4 mr-2" />
+          )}
         </button>
       </div>
     </div>

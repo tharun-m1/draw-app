@@ -85,6 +85,7 @@ export class Game {
     this.canvas = canvas;
     this.roomId = roomId;
     this.init();
+    // console.log("from cons: ", this.existingShapes)
   }
   setSelectedTool(selectedTool: SelectedTool) {
     this.selectedTool = selectedTool;
@@ -269,10 +270,11 @@ export class Game {
     this.canvas.removeEventListener("mousedown", this.mouseDownHandler);
     this.canvas.removeEventListener("mousemove", this.mouseMoveHandler);
     this.canvas.removeEventListener("mouseup", this.mouseUpHandler);
+    // console.log("destroyed")
   }
 
   private eraseShape(shapeId: string) {
-    // console.log("shapeId: ", shape)
+    // console.log("shapeId: ", shapeId)
     this.existingShapes = this.existingShapes.filter(
       (shape: Shape) => shape?.shapeId !== shapeId
     );
@@ -426,8 +428,8 @@ export class Game {
       return;
     }
     if (this.selectedTool === "erase") {
-      const x = e.clientX;
-      const y = e.clientY;
+      const x =  e.clientX;
+      const y =  e.clientY;
       let current_index = 0;
       for (let shape of this.existingShapes) { 
         if (shape?.type === "rect") {
@@ -517,6 +519,9 @@ export class Game {
         width: this.width,
         height: this.heigth,
       };
+      if(this.width < 20 || this.heigth < 20){
+        newShape = null
+      }
     }
     if (this.selectedTool === "circle") {
       newShape = {
@@ -529,6 +534,9 @@ export class Game {
         startAngle: 0,
         endAngle: 2 * Math.PI,
       };
+      if(this.width / 2 < 20 || this.heigth / 2 < 20){
+        newShape = null
+      }
     }
     if (this.selectedTool === "line") {
       newShape = {
@@ -538,6 +546,13 @@ export class Game {
         endX: e.clientX,
         endY: e.clientY,
       };
+      let lineSize = 0;
+      const X = Math.pow((e.clientX - this.startX),2)
+      const Y = Math.pow((e.clientY - this.startY),2)
+      lineSize = Math.sqrt(X + Y)
+      if(lineSize < 20){
+        newShape = null
+      }
     }
     if (this.selectedTool === "pen") {
       newShape = {
@@ -545,6 +560,7 @@ export class Game {
         points: this.points,
       };
       this.points = [];
+      
     }
 
     if (!newShape) return;
@@ -577,13 +593,20 @@ export class Game {
     this.ws.onmessage = (e) => {
       const message = JSON.parse(e.data);
       if (message.type === "chat") {
+        // console.log("After Adding: ", )
         const shape = JSON.parse(message.message);
-        this.existingShapes.push(shape);
+        this.existingShapes.push({...shape, shapeId:message.shapeId});
+        // console.log(this.existingShapes)
         this.clearCanvas();
       } else if (message.type === "erase") {
+        // alert(this.existingShapes)
+       
         this.existingShapes = this.existingShapes.filter(
           (shape) => shape?.shapeId !== message.shapeId
         );
+        // alert(`length: ${this.existingShapes.length}`)
+        // console.log("Existing Shapes:")
+        // console.log(this.existingShapes)
         this.clearCanvas();
       }
     };
@@ -600,6 +623,7 @@ export class Game {
       const shape = JSON.parse(msg.message);
       return { ...shape, shapeId: msg.shapeId };
     });
+    // console.log("shapes: ", shapes)
     return shapes;
   }
 

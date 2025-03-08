@@ -66,7 +66,7 @@ function Canvas({ roomId, ws }: CanvasProps) {
   }, [selectedTool, game]);
   return (
     <div className="h-full w-full relative">
-      <canvas ref={canvasRef} width={width} height={height}></canvas>
+      <canvas ref={canvasRef} width={width} height={height} color="black"></canvas>
       {/* <div className="fixed top-4 w-full flex justify-center  text-white"> */}
         <div ref={toolbarRef} style={{
           left: getLeft()

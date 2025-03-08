@@ -18,12 +18,12 @@ function Header() {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <button
+              {/* <button
                 className="text-gray-400 hover:text-gray-300 transition-colors"
                 
               >
                 <UserIcon className="h-5 w-5" />
-              </button>
+              </button> */}
               <button
                 className="text-gray-400 hover:text-gray-300 transition-colors"
                 onClick={handleLogout}

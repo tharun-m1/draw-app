@@ -21,7 +21,7 @@ interface AuthProps {
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { BACKEND_URL } from "@/config";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -88,14 +88,15 @@ const Auth: React.FC<AuthProps> = ({ signin }) => {
           router.push("/dashboard");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
-      if (signin) {
-        toast.error("Unable to Login.");
-      }
-      if (!signin) {
-        toast.error("Unable to Signup");
-      }
+      toast.error(error?.response?.data?.message || "Something went Wrong", {id:"FAILED"});
+      // if (error && signin) {
+      //   toast.error(error?.response?.data?.message);
+      // }
+      // if (!signin) {
+      //   toast.error("Unable to Signup");
+      // }
     } finally {
       setIsLoading(false);
     }
@@ -269,7 +270,7 @@ const Auth: React.FC<AuthProps> = ({ signin }) => {
             )}
           </div>
 
-          {signin && (
+          {/* {signin && (
             <div className="flex items-center justify-end">
               <button
                 type="button"
@@ -278,7 +279,7 @@ const Auth: React.FC<AuthProps> = ({ signin }) => {
                 Forgot your password?
               </button>
             </div>
-          )}
+          )} */}
 
           <button
             disabled={isLoading}
