@@ -37,13 +37,14 @@ function ConnectPage({ slugId }: ConnectPageProps) {
 
         ws.send(data);
       };
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         const key = localStorage.getItem("passKey");
         if (!key) {
           toast.error("No Pass Key Provided!", { id: "NO_PASSKEY" });
         } else {
           toast.error("Server Disconnected!", { id: "DISCONNECTED" });
         }
+        console.log(event.reason)
         router.replace("/dashboard");
       };
     } catch (error) {

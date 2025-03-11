@@ -65,12 +65,13 @@ function Canvas({ roomId, ws }: CanvasProps) {
     game?.setSelectedTool(selectedTool);
   }, [selectedTool, game]);
   return (
-    <div className="h-full w-full relative">
+    <>
+    {width >= 992 ?<div className="h-full w-full relative">
       <canvas ref={canvasRef} width={width} height={height} color="black"></canvas>
       {/* <div className="fixed top-4 w-full flex justify-center  text-white"> */}
         <div ref={toolbarRef} style={{
           left: getLeft()
-        }} className="bg-zinc-700 flex items-center gap-4 px-3 py-1 rounded-lg z-50 absolute top-4 text-white">
+        }} className="bg-zinc-700 flex items-center gap-4 px-3 py-1 rounded-lg z-50 absolute top-4 text-white ">
           <Tool
             changeTool={() => handleToolSelect("circle")}
             isSelected={selectedTool === "circle"}
@@ -113,7 +114,8 @@ function Canvas({ roomId, ws }: CanvasProps) {
           <button onClick={handleExitRoom} className="bg-red-600 text-white px-2 py-1 rounded-md">Exit</button>
         {/* </div> */}
       </div>
-    </div>
+    </div>:<div className="h-[100vh] w-full relative text-white font-bold flex justify-center items-center bg-black">Use screen &gt;992px</div>}
+    </>
   );
 }
 

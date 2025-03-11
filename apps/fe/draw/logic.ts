@@ -1,6 +1,7 @@
 import { BACKEND_URL } from "@/config";
 import axios from "axios";
 import { Key } from "react";
+import toast from "react-hot-toast";
 
 type SelectedTool =
   | "rect"
@@ -90,9 +91,11 @@ export class Game {
   setSelectedTool(selectedTool: SelectedTool) {
     this.selectedTool = selectedTool;
     if (selectedTool === "pointer") {
-      this.canvas.style.cursor = "move";
-    } else {
       this.canvas.style.cursor = "auto";
+    } else if(selectedTool === "erase") {
+      this.canvas.style.cursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Ccircle cx='5' cy='5' r='5' fill='white'/%3E%3C/svg%3E") 5 5, pointer`;
+    }else {
+      this.canvas.style.cursor = "crosshair"
     }
   }
 
@@ -108,7 +111,9 @@ export class Game {
   private drawStrokeRect(s: number, e: number, w: number, h: number) {
     if (!this.ctx) return;
     this.ctx.strokeStyle = "rgba(255, 255, 255)";
-    this.ctx?.strokeRect(s, e, w, h);
+    // this.ctx?.strokeRect(s, e, w, h);
+    this.ctx?.roundRect(s, e, w, h, 16);
+    this.ctx.stroke();
   }
   private drawStrokeCircle(
     centerX: number,
@@ -142,19 +147,35 @@ export class Game {
 
   private freeHand(points: any) {
     if (!this.ctx) return;
-    this.ctx.lineWidth = 2;
+    // this.ctx.lineWidth = 2;
+    if (points.length < 4) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(points[0]?.x, points[0]?.y);
+      for (let i = 1; i < points.length; i++) {
+        this.ctx.lineTo(points[i]?.x, points[i]?.y);
+      }
+      this.ctx.stroke();
+      return;
+    }
     this.ctx?.beginPath();
     this.ctx?.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length - 1; i++) {
-      const xc = (points[i].x + points[i + 1].x) / 2;
-      const yc = (points[i].y + points[i + 1].y) / 2;
-      this.ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+    for (let i = 1; i < points.length - 2; i++) {
+      let p0 = points[i - 1];
+      let p1 = points[i];
+      let p2 = points[i + 1];
+      let p3 = points[i + 2];
+
+      let cp1x = p1.x + (p2.x - p0.x) / 6;
+      let cp1y = p1.y + (p2.y - p0.y) / 6;
+      let cp2x = p2.x - (p3.x - p1.x) / 6;
+      let cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      this.ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
     }
 
-    this.ctx.stroke();
+    this.ctx.strokeStyle = "white";
     this.ctx.lineWidth = 2;
-    this.ctx.lineCap = "round";
-    this.ctx.lineJoin = "round";
+    this.ctx.stroke();
   }
 
   async initShapes() {
@@ -318,7 +339,7 @@ export class Game {
         return true;
       }
     }
-    return false
+    return false;
   }
 
   private eraseLine(
@@ -361,7 +382,7 @@ export class Game {
       this.eraseShape(shape.shapeId);
       return true;
     }
-    return false
+    return false;
   }
 
   private eraseFreeHandDrawing(
@@ -372,7 +393,7 @@ export class Game {
     shape.points.forEach((point) => {
       const cx = point.x;
       const cy = point.y;
-      const radius = 2;
+      const radius = 5;
       const dx = x - cx;
       const dy = y - cy;
       const res = dx * dx + dy * dy - radius * radius;
@@ -381,7 +402,7 @@ export class Game {
         return true;
       }
     });
-    return false
+    return false;
   }
 
   private eraseText(
@@ -417,7 +438,7 @@ export class Game {
       y >= shape.startY - 10 &&
       y <= shape.startY + total_height
     ) {
-      this.eraseShape(shape.shapeId)
+      this.eraseShape(shape.shapeId);
       return true;
     }
     return false;
@@ -428,25 +449,25 @@ export class Game {
       return;
     }
     if (this.selectedTool === "erase") {
-      const x =  e.clientX;
-      const y =  e.clientY;
+      const x = e.clientX;
+      const y = e.clientY;
       let current_index = 0;
-      for (let shape of this.existingShapes) { 
+      for (let shape of this.existingShapes) {
         if (shape?.type === "rect") {
           const erased = this.eraseRect(x, y, shape);
-          if(erased) return;
+          if (erased) return;
         } else if (shape?.type === "line") {
           const erased = this.eraseLine(x, y, shape);
-          if(erased) return;
+          if (erased) return;
         } else if (shape?.type === "circle") {
           const erased = this.eraseCircle(x, y, shape);
-          if(erased) return;
+          if (erased) return;
         } else if (shape?.type === "pen") {
           const erased = this.eraseFreeHandDrawing(x, y, shape);
-          if(erased) return;
+          if (erased) return;
         } else if (shape?.type === "text") {
           const erased = this.eraseText(x, y, shape);
-          if(erased) return;
+          if (erased) return;
         }
         current_index++;
       }
@@ -519,8 +540,8 @@ export class Game {
         width: this.width,
         height: this.heigth,
       };
-      if(this.width < 20 || this.heigth < 20){
-        newShape = null
+      if (this.width < 20 || this.heigth < 20) {
+        newShape = null;
       }
     }
     if (this.selectedTool === "circle") {
@@ -534,8 +555,8 @@ export class Game {
         startAngle: 0,
         endAngle: 2 * Math.PI,
       };
-      if(this.width / 2 < 20 || this.heigth / 2 < 20){
-        newShape = null
+      if (this.width / 2 < 20 || this.heigth / 2 < 20) {
+        newShape = null;
       }
     }
     if (this.selectedTool === "line") {
@@ -547,11 +568,11 @@ export class Game {
         endY: e.clientY,
       };
       let lineSize = 0;
-      const X = Math.pow((e.clientX - this.startX),2)
-      const Y = Math.pow((e.clientY - this.startY),2)
-      lineSize = Math.sqrt(X + Y)
-      if(lineSize < 20){
-        newShape = null
+      const X = Math.pow(e.clientX - this.startX, 2);
+      const Y = Math.pow(e.clientY - this.startY, 2);
+      lineSize = Math.sqrt(X + Y);
+      if (lineSize < 20) {
+        newShape = null;
       }
     }
     if (this.selectedTool === "pen") {
@@ -560,7 +581,6 @@ export class Game {
         points: this.points,
       };
       this.points = [];
-      
     }
 
     if (!newShape) return;
@@ -580,12 +600,23 @@ export class Game {
     );
   };
 
+  private handleTouchStart = () => {
+
+  }
+
+  private handleTouchMove = () => {}
+
+  private handleTouchEnd = () => {}
+
   private initHandlers() {
     this.canvas.addEventListener("mousedown", this.mouseDownHandler);
+    this.canvas.addEventListener("touchstart", this.handleTouchStart)
 
     this.canvas.addEventListener("mousemove", this.mouseMoveHandler);
+    this.canvas.addEventListener("touchmove", this.handleTouchMove)
 
     this.canvas.addEventListener("mouseup", this.mouseUpHandler);
+    this.canvas.addEventListener("touchend", this.handleTouchEnd);
     if (!this.ws) {
       alert("no ws");
       return;
@@ -595,12 +626,12 @@ export class Game {
       if (message.type === "chat") {
         // console.log("After Adding: ", )
         const shape = JSON.parse(message.message);
-        this.existingShapes.push({...shape, shapeId:message.shapeId});
+        this.existingShapes.push({ ...shape, shapeId: message.shapeId });
         // console.log(this.existingShapes)
         this.clearCanvas();
       } else if (message.type === "erase") {
         // alert(this.existingShapes)
-       
+
         this.existingShapes = this.existingShapes.filter(
           (shape) => shape?.shapeId !== message.shapeId
         );
