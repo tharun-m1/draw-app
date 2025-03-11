@@ -66,7 +66,7 @@ function Canvas({ roomId, ws }: CanvasProps) {
   }, [selectedTool, game]);
   return (
     <>
-    {width >= 992 ?<div className="h-full w-full relative">
+    <div className="h-full w-full relative max-[992px]:hidden">
       <canvas ref={canvasRef} width={width} height={height} color="black"></canvas>
       {/* <div className="fixed top-4 w-full flex justify-center  text-white"> */}
         <div ref={toolbarRef} style={{
@@ -114,7 +114,8 @@ function Canvas({ roomId, ws }: CanvasProps) {
           <button onClick={handleExitRoom} className="bg-red-600 text-white px-2 py-1 rounded-md">Exit</button>
         {/* </div> */}
       </div>
-    </div>:<div className="h-[100vh] w-full relative text-white font-bold flex justify-center items-center bg-black">Use screen &gt;992px</div>}
+    </div>
+    <div className="min-[992px]:hidden h-[100vh] w-full relative text-white font-bold flex justify-center items-center bg-black">Use screen &gt;992px</div>
     </>
   );
 }

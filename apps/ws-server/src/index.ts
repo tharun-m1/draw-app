@@ -87,7 +87,7 @@ wss.on("connection", function connection(ws, request) {
           const users_in_room = rooms[roomId] || [];
           const user = users_in_room.findIndex((usr) => usr.user_id === user_id)
           if(user !== -1){
-            console.log("already in room");
+            // console.log("already in room");
             if (!users_in_room) return;
             if (users_in_room[user]) {
               users_in_room[user].ws = ws;
@@ -97,10 +97,10 @@ wss.on("connection", function connection(ws, request) {
           }
           users_in_room.push({ user_id, ws });
           rooms[roomId] = users_in_room;
-          console.log(rooms[roomId].length)
+          // console.log(rooms[roomId].length)
         } else if (parsedData.type === "chat") {
           const roomId = parsedData.roomId;
-          console.log("parsed data", parsedData)
+          // console.log("parsed data", parsedData)
           const message = parsedData.message;
           const shapeId = parsedData.shapeId;
           await prisma.chat.create({
@@ -111,12 +111,12 @@ wss.on("connection", function connection(ws, request) {
               shapeId,
             },
           });
-          console.log(
-            JSON.stringify({
-              type: "chat",
-              message: message,
-            })
-          );
+          // console.log(
+          //   JSON.stringify({
+          //     type: "chat",
+          //     message: message,
+          //   })
+          // );
           rooms[roomId]?.forEach((user) => {
             if (user.user_id !== user_id) {
               user.ws.send(
@@ -126,11 +126,11 @@ wss.on("connection", function connection(ws, request) {
                   shapeId: shapeId
                 })
               );
-              console.log("sent to: ", user.user_id);
+              // console.log("sent to: ", user.user_id);
             }
           });
         } else if (parsedData.type === "leave_room") {
-          console.log(`${user_id} left room`);
+          // console.log(`${user_id} left room`);
           const roomId = parsedData.roomId;
           const new_state =
             rooms[roomId]?.filter((room) => room.user_id !== user_id) || [];
@@ -138,20 +138,20 @@ wss.on("connection", function connection(ws, request) {
         } else if (parsedData.type === "erase") {
           const roomId = parsedData.roomId;
           const shapeId = parsedData.shapeId as string;
-          console.log("parsed data: ", parsedData)
-          console.log("Shape Id to be deleted: ", shapeId)
+          // console.log("parsed data: ", parsedData)
+          // console.log("Shape Id to be deleted: ", shapeId)
           await prisma.chat.deleteMany({
             where: {
               shapeId: shapeId,
             },
           });
-          console.log(
-            "erase data: ",
-            JSON.stringify({
-              type: "erase",
-              shapeId: shapeId,
-            })
-          );
+          // console.log(
+          //   "erase data: ",
+          //   JSON.stringify({
+          //     type: "erase",
+          //     shapeId: shapeId,
+          //   })
+          // );
           rooms[roomId]?.forEach((user) => {
             if (user.user_id !== user_id) {
               user.ws.send(
@@ -160,7 +160,7 @@ wss.on("connection", function connection(ws, request) {
                   shapeId: shapeId,
                 })
               );
-              console.log("user id: ", user.user_id)
+              // console.log("user id: ", user.user_id)
             }
           });
         }
