@@ -131,6 +131,7 @@ wss.on("connection", function connection(ws, request) {
           });
         } else if (parsedData.type === "leave_room") {
           // console.log(`${user_id} left room`);
+          // on leave add feature to disconnect from server;
           const roomId = parsedData.roomId;
           const new_state =
             rooms[roomId]?.filter((room) => room.user_id !== user_id) || [];
